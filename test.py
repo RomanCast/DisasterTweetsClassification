@@ -22,7 +22,7 @@ def test(args, model, testloader):
     inputs:
         args: Namespace object containing necessary variables.
         model: a Pytorch model that is being trained
-        validloader: a DataLoader (see PyTorch docs) containing the validation / develoment set
+        testloader: a DataLoader (see PyTorch docs) containing the validation / develoment set
 
     outputs:
         accuracy and f1 score of the model on the validation data
@@ -30,7 +30,7 @@ def test(args, model, testloader):
     model.eval()
     all_preds, all_labels = [], []
     with torch.no_grad():
-        for i, sample in enumerate(validloader):
+        for i, sample in enumerate(testloader):
             inputs, labels = process_inputs(sample)
             inputs = {key: val.to(args.device) for key, val in inputs.items()}
             labels = labels.to(args.device)
