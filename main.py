@@ -78,7 +78,7 @@ def validation(args, model, validloader):
 
     all_preds = np.array(all_preds)
     all_labels = np.array(all_labels)
-    f1 = f1_score(all_labels, all_preds, average='micro')
+    f1 = f1_score(all_labels, all_preds, average='macro')
     acc = (all_preds == all_labels).sum() / all_preds.shape[0]
     return acc, f1
 

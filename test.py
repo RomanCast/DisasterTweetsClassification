@@ -44,7 +44,7 @@ def test(args, model, testloader):
 
     all_preds = np.array(all_preds)
     all_labels = np.array(all_labels)
-    f1 = f1_score(all_labels, all_preds, average='micro')
+    f1 = f1_score(all_labels, all_preds, average='macro')
     acc = (all_preds == all_labels).sum() / all_preds.shape[0]
     return acc, f1
 
@@ -99,5 +99,5 @@ if __name__ == '__main__':
     # Run testing
     acc, f1 = test(args, model, testloader)
     print(f"Results for the model trained on {', '.join(args.train_on)} evaluated on {args.test_on}:")
-    print(f"\tAccuracy: {acc:.4d}")
-    print(f"\tF1      : {f1:.4d}")
+    print(f"\tAccuracy: {acc:.4f}")
+    print(f"\tF1      : {f1:.4f}")
