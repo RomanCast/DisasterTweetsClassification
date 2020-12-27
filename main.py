@@ -1,4 +1,5 @@
 import os
+import json
 import argparse
 import torch
 from torch.utils.data import DataLoader, random_split
@@ -112,7 +113,7 @@ if __name__ == '__main__':
     validloader = DataLoader(val_dataset, batch_size=256, shuffle=False)
 
     # Get the number of unique labels to initialize the model
-    unique_labels = dataset.get_unique_labels()
+    unique_labels = json.load(open("data/humanitarian_labels.json", 'r'))
     num_labels = len(unique_labels)
     label_to_id = {l: i for i, l in enumerate(unique_labels)}
 

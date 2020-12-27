@@ -1,4 +1,5 @@
 import os
+import json
 import argparse
 import torch
 from torch.utils.data import DataLoader, random_split
@@ -63,11 +64,8 @@ if __name__ == '__main__':
     # Get the model name on the existing folder containing models. If it does not exist, this will throw an exception
     args.finetuned_checkpoint = get_model_name(args, saving=False)
 
-    # Load training data to get number of labels
-    tr_dataset = HumanitarianDataset(args.train_filename, disaster_names=args.train_on)
-
     # Get the number of unique labels
-    unique_labels = tr_dataset.get_unique_labels()
+    unique_labels = json.load(open("data/humanitarian_labels.json", 'r'))
     num_labels = len(unique_labels)
     label_to_id = {l: i for i, l in enumerate(unique_labels)}
 
