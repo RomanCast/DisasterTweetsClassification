@@ -45,8 +45,11 @@ def train(args, model, optimizer, trainloader, validloader):
             if (i + 1) % args.val_metrics == 0:
                 f1, acc = validation(args, model, validloader)
                 print(f"[{epoch}, {i:5d}] : F1 = {f1:.4f}; Acc = {acc:.4f}; Tr loss = {running_loss / args.val_metrics:.4f}")
+                if args.use_wandb:
+                    wandb.log({'accuracy': acc, 'f1': f1, 'training_loss': running_loss})
                 running_loss = 0.
                 model.train()
+        # Be careful: right now we save a model at each epoch, which will eat the memory of your drive quickly
         torch.save(model.state_dict(), os.path.join(args.save_path, get_model_name(args, epoch)))
 
 
@@ -94,11 +97,23 @@ if __name__ == '__main__':
     parser.add_argument("--lr", type=float, default=0.0001)
     parser.add_argument("--save_path", type=str, default="models")
     parser.add_argument("--seed", type=int, default=2020)
+    parser.add_argument("--use_wandb", action='store_true')
     args = parser.parse_args()
     args.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    args.do_train = True
     args.val_metrics = 300
     args.train_prop = 0.8
+
+    # Some logging, will be useful to keep track of the different results
+    if args.use_wandb:
+        import wandb
+        wandb.init(project="disaster-classification")
+        wandb.config.train    = args.train_on
+        wandb.config.lr       = args.lr
+        wandb.config.bs       = args.batch_size
+        wandb.config.model    = args.model_name_or_path
+        wandb.config.n_epochs = args.n_epochs
+        wandb.config.seed     = args.seed
+        wandb.config.run      = "training"
 
     # For reproducibility purpose
     set_seed(args.seed)

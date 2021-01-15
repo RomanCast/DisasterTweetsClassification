@@ -57,9 +57,19 @@ if __name__ == '__main__':
     parser.add_argument("--train_on", type=str, nargs="+", help="List of disaster on which the model was trained.")
     parser.add_argument("--epoch", type=int, help="Load the model that was trained on --epoch epochs.")
     parser.add_argument("--test_on", type=str, help="Disaster on which to test the model.")
+    parser.add_argument("--use_wandb", action='store_true')
     args = parser.parse_args()
     args.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     args.save_path = "models"
+
+    # Some logging, will be useful to keep track of the different evaluation results
+    if args.use_wandb:
+        import wandb
+        wandb.init(project="disaster-classification")
+        wandb.config.train    = args.train_on
+        wandb.config.eval     = args.test_on
+        wandb.config.model    = args.model_name_or_path
+        wandb.config.run      = "evaluation"
 
     # Get the model name on the existing folder containing models. If it does not exist, this will throw an exception
     args.finetuned_checkpoint = get_model_name(args, saving=False)
@@ -101,3 +111,7 @@ if __name__ == '__main__':
     print(f"Results for the model trained on {', '.join(args.train_on)} evaluated on {args.test_on}:")
     print(f"\tAccuracy: {acc:.4f}")
     print(f"\tF1      : {f1:.4f}")
+
+    if args.use_wandb:
+        wandb.run.summary["accuracy"] = acc
+        wandb.run.summary["f1"] = f1
