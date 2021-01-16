@@ -1,13 +1,12 @@
 import os
 
 
-def get_model_name(args, epoch=None, saving=True):
+def get_model_name(args, saving=True):
     """
     Create a name for your finetuned model / checkpoint. If saving is False, then this function will check that such a model exists, and raise an error if it does not exist.
     """
-    epoch = epoch if epoch is not None else args.epoch
     domains = '_'.join(args.train_on) if args.train_on is not None else 'all'
-    model_name = f"{args.model_name_or_path}_{domains}_epoch_{epoch+1}.pt"
+    model_name = f"{args.model_name_or_path}_{domains}.pt"
     if saving:
         return model_name
     else:

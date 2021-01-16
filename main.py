@@ -32,6 +32,7 @@ def train(args, model, optimizer, trainloader, validloader):
     model.train()
     for epoch in range(args.n_epochs):
         running_loss = 0.
+        best_f1 = 0.
         for i, sample in enumerate(trainloader):
             inputs, labels = process_inputs(sample)
             inputs = {key: val.to(args.device) for key, val in inputs.items()}
@@ -49,8 +50,13 @@ def train(args, model, optimizer, trainloader, validloader):
                     wandb.log({'accuracy': acc, 'f1': f1, 'training_loss': running_loss})
                 running_loss = 0.
                 model.train()
-        # Be careful: right now we save a model at each epoch, which will eat the memory of your drive quickly
-        torch.save(model.state_dict(), os.path.join(args.save_path, get_model_name(args, epoch)))
+
+        f1, acc = validation(args, model, validloader)
+        # We only save the best model given by the validation data
+        if f1 > best_f1:
+            best_f1 = f1
+            # Save the model
+            torch.save(model.state_dict(), os.path.join(args.save_path, get_model_name(args)))
 
 
 def validation(args, model, validloader):

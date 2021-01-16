@@ -55,7 +55,6 @@ if __name__ == '__main__':
     parser.add_argument("--train_filename", type=str, nargs='+', help="The dataset on which the model was trained on. Used to retrieve the labels")
     parser.add_argument("--test_filename", type=str)
     parser.add_argument("--train_on", type=str, nargs="+", help="List of disaster on which the model was trained.")
-    parser.add_argument("--epoch", type=int, help="Load the model that was trained on --epoch epochs.")
     parser.add_argument("--test_on", type=str, help="Disaster on which to test the model.")
     parser.add_argument("--use_wandb", action='store_true')
     args = parser.parse_args()
