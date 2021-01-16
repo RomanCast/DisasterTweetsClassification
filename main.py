@@ -55,6 +55,9 @@ def train(args, model, optimizer, trainloader, validloader):
         # We only save the best model given by the validation data
         if f1 > best_f1:
             best_f1 = f1
+            if args.use_wandb:
+                wandb.run.summary["f1"] = f1
+                wandb.run.summary["accuracy"] = acc
             # Save the model
             torch.save(model.state_dict(), os.path.join(args.save_path, get_model_name(args)))
 
@@ -132,6 +135,9 @@ if __name__ == '__main__':
     train_dataset, val_dataset = random_split(dataset, lengths=[train_length, len(dataset) - train_length])
     trainloader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
     validloader = DataLoader(val_dataset, batch_size=256, shuffle=False)
+
+    # We want to use the validation data at least twice per epoch
+    args.val_metrics = min(args.val_metrics, len(trainloader) // 2)
 
     # Get the number of unique labels to initialize the model
     unique_labels = json.load(open("data/humanitarian_labels.json", 'r'))
