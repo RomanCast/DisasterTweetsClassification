@@ -6,11 +6,13 @@ class HumanitarianDataset(Dataset):
     def __init__(self, filename, disaster_names=None, preprocess=True):
         if type(disaster_names) == str:
             disaster_names = [disaster_names]
+        # Load several datasets and concatenate them
         if type(filename) == list:
             all_data_list = []
             for fn in filename:
                 all_data_list += [self._load_data(fn, disaster_names, preprocess)]
-            all_data = pd.concat(all_data_list, axis=0)
+            all_data = pd.concat(all_data_list, axis=0, ignore_index=True)
+        # Load a single dataset
         else:
             all_data = self._load_data(filename, disaster_names, preprocess)
         self.data = all_data["text"].tolist()
@@ -21,13 +23,6 @@ class HumanitarianDataset(Dataset):
 
     def __len__(self):
         return len(self.data)
-
-    def get_unique_labels(self):
-        """
-        outputs:
-            a list containing all the labels sorted by name
-        """
-        return sorted(list(pd.unique(self.labels)))
 
     def _load_data(self, filename, names, preprocess):
         """
@@ -44,8 +39,9 @@ class HumanitarianDataset(Dataset):
             # Select only some rows
             all_data = all_data[all_data["event"].isin(names)]
         if preprocess:
-            # Some simple preprocessing, removing the "#", "RT", "@...", "http://t.co/etc.."
+            # Some simple preprocessing, removing the "#", "RT", "@...", "http://t.co/etc..", non ascii characters, and replace multiple spaces by one
             all_data["text"] = all_data["text"].str.replace(r"RT|#|@\w+:?|https?\S+", "") \
+                                               .str.replace(r"[^\x00-\x7F]+", "") \
                                                .str.replace("\s+", " ") \
                                                .str.strip()
 

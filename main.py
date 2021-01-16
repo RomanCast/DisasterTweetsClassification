@@ -18,7 +18,7 @@ import time
 from data import HumanitarianDataset
 from utils import get_model_name
 
-def train(args, model, optimizer, trainloader, validloader):
+def train(args, model, optimizer, trainloader, validloader, process_inputs):
     """
     Train the model on the training data for a number of epochs specified in the arguments.
 
@@ -27,7 +27,8 @@ def train(args, model, optimizer, trainloader, validloader):
         model: a PyTorch model being trained. Preferably a HuggingFace model since it needs to output an object with attributes "loss" and "logits"
         optimizer: the optimizer used to train the model
         trainloader: a DataLoader object containing the training data
-        validloader:a DataLoader object containing the validation / development data
+        validloader: a DataLoader object containing the validation / development data
+        process_inputs: a function that processes each batch
     """
     model.train()
     for epoch in range(args.n_epochs):
@@ -44,25 +45,27 @@ def train(args, model, optimizer, trainloader, validloader):
             optimizer.step()
             running_loss += loss.item()
             if (i + 1) % args.val_metrics == 0:
-                f1, acc = validation(args, model, validloader)
+                acc, f1 = validation(args, model, validloader, process_inputs)
                 print(f"[{epoch}, {i:5d}] : F1 = {f1:.4f}; Acc = {acc:.4f}; Tr loss = {running_loss / args.val_metrics:.4f}")
                 if args.use_wandb:
-                    wandb.log({'accuracy': acc, 'f1': f1, 'training_loss': running_loss})
+                    batch = len(trainloader) * epoch + i
+                    wandb.log({'accuracy': acc, 'f1': f1, 'training_loss': running_loss, 'batch': batch})
                 running_loss = 0.
                 model.train()
 
-        f1, acc = validation(args, model, validloader)
+        acc, f1 = validation(args, model, validloader, process_inputs)
         # We only save the best model given by the validation data
         if f1 > best_f1:
             best_f1 = f1
             if args.use_wandb:
-                wandb.run.summary["f1"] = f1
-                wandb.run.summary["accuracy"] = acc
+                wandb.run.summary["best_f1"] = f1
+                wandb.run.summary["best_accuracy"] = acc
+                wandb.run.summary["best_epoch"] = epoch
             # Save the model
             torch.save(model.state_dict(), os.path.join(args.save_path, get_model_name(args)))
 
 
-def validation(args, model, validloader):
+def validation(args, model, validloader, process_inputs):
     """
     Uses the model and a validation set to assess the performance of the model through training.
 
@@ -168,4 +171,4 @@ if __name__ == '__main__':
         labels = torch.tensor([label_to_id[l] for l in examples["labels"]])
         return inputs, labels
 
-    train(args, model, optimizer, trainloader, validloader)
+    train(args, model, optimizer, trainloader, validloader, process_inputs)
