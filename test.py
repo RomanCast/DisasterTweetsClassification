@@ -23,8 +23,10 @@ if __name__ == '__main__':
     parser.add_argument("--model_name_or_path", type=str)
     parser.add_argument("--train_filename", type=str, nargs='+', help="The dataset on which the model was trained on. Used to retrieve the labels.")
     parser.add_argument("--test_filename", type=str, nargs='+', help="The dataset on which the model will be evaluated.")
-    parser.add_argument("--train_on", type=str, nargs="+", help="List of disaster on which the model was trained.")
+    parser.add_argument("--train_on", type=str, nargs="+", help="List of disasters on which the model was trained.")
+    parser.add_argument("--train_sources", default=None, nargs="+", type=str, help="List of database sources on which the model was trained")
     parser.add_argument("--test_on", type=str, nargs="+", help="Disaster on which to test the model.")
+    parser.add_argument("--test_sources", default=None, nargs="+", type=str, help="List of database sources on which to test the model")
     parser.add_argument("--use_wandb", action='store_true')
     args = parser.parse_args()
     args.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -61,24 +63,41 @@ if __name__ == '__main__':
         labels = torch.tensor([label_to_id[l] for l in examples["labels"]])
         return inputs, labels
 
+    # In case you would like to evaluate on ALL events
+    if args.test_on is not None:
+        test_events = args.test_on
+    else:
+        test_events = [None]
+
     # This loop will evaluate the model for each event you want to test it on
-    for test_event in args.test_on:
+    for test_event in test_events:
         # Some logging, will be useful to keep track of the different evaluation results
         if args.use_wandb:
             import wandb
             wandb.init(project="disaster-classification")
-            wandb.config.train    = args.train_on
-            wandb.config.eval     = test_event
-            wandb.config.model    = args.model_name_or_path
-            wandb.config.run      = "evaluation"
+            wandb.config.train        = args.train_on
+            wandb.config.eval         = test_event
+            wandb.config.eval_sources = args.test_sources
+            wandb.config.model        = args.model_name_or_path
+            wandb.config.run          = "evaluation"
 
         # Load data to test on
-        dataset = HumanitarianDataset(args.test_filename, disaster_names=test_event)
+        dataset = HumanitarianDataset(args.test_filename, disaster_names=test_event, source_names=args.test_sources)
         testloader = DataLoader(dataset, batch_size=256, shuffle=False)
 
         # Run testing
         acc, f1 = validation(args, model, testloader, process_inputs)
-        print(f"Results for the model trained on {', '.join(args.train_on)} evaluated on {test_event}:")
+
+        # A bit of magic for printing
+        if args.train_on is not None:
+            trained_on = ', '.join(args.train_on)
+        elif args.train_sources is not None:
+            trained_on = ', '.join(args.train_sources)
+        else:
+            trained_on = 'all'
+
+        print(f"Results for the model trained on {trained_on} evaluated on {test_event if test_event is not None else 'all'} "
+              f"from {', '.join(args.test_sources) if args.test_sources is not None else 'all'} datasets:")
         print(f"\tAccuracy: {acc:.4f}")
         print(f"\tF1      : {f1:.4f}")
 

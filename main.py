@@ -103,6 +103,7 @@ if __name__ == '__main__':
     parser.add_argument("--dataset_filename", type=str, nargs="+", default=["data/all_data_en/crisis_consolidated_humanitarian_filtered_lang_en_train_light.tsv",
                                                                             "data/all_data_en/crisis_consolidated_humanitarian_filtered_lang_en_dev_light.tsv"])
     parser.add_argument("--train_on", default=None, nargs="+", type=str, help="List of names of disasters on which to train the model")
+    parser.add_argument("--train_sources", default=None, nargs="+", type=str, help="List of database sources on which to train the model")
     parser.add_argument("--model_name_or_path", type=str, default="distilbert-base-uncased")
     parser.add_argument("--n_epochs", type=int, default=1)
     parser.add_argument("--batch_size", type=int, default=32)
@@ -120,6 +121,7 @@ if __name__ == '__main__':
         import wandb
         wandb.init(project="disaster-classification")
         wandb.config.train    = args.train_on
+        wandb.config.sources  = args.train_sources
         wandb.config.lr       = args.lr
         wandb.config.bs       = args.batch_size
         wandb.config.model    = args.model_name_or_path
@@ -131,7 +133,7 @@ if __name__ == '__main__':
     set_seed(args.seed)
 
     # Load the data in DataLoaders.
-    dataset = HumanitarianDataset(args.dataset_filename, disaster_names=args.train_on)
+    dataset = HumanitarianDataset(args.dataset_filename, disaster_names=args.train_on, source_names=args.train_sources)
 
     # Split the dataset into training and testing splits
     train_length = int(len(dataset) * args.train_prop)
