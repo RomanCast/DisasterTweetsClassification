@@ -10,7 +10,7 @@ def get_model_name(args, saving=True, adversarial=False):
     model_name = f"{args.model_name_or_path}_{domains}{sources}"
     if adversarial:
         target_domains = '_'.join(args.target_events)  if args.target_events is not None else ''
-        target_sources = '_'.join(args.target_sources) if args.target_events is not None else ''
+        target_sources = '_'.join(args.target_sources) if args.target_sources is not None else ''
         model_name += f"_target_{target_domains}{target_sources}"
     model_name += ".pt"
     if saving:
