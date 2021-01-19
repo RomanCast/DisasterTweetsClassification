@@ -3,20 +3,20 @@ import pandas as pd
 
 
 class HumanitarianDataset(Dataset):
-    def __init__(self, filename, disaster_names=None, source_names=None, preprocess=True):
-        if type(disaster_names) == str:
-            disaster_names = [disaster_names]
+    def __init__(self, filename, event_names=None, source_names=None, preprocess=True):
+        if type(event_names) == str:
+            event_names = [event_names]
         if type(source_names) == str:
             sources_names = [source_names]
         # Load several datasets and concatenate them
         if type(filename) == list:
             all_data_list = []
             for fn in filename:
-                all_data_list += [self._load_data(fn, disaster_names, source_names, preprocess)]
+                all_data_list += [self._load_data(fn, event_names, source_names, preprocess)]
             all_data = pd.concat(all_data_list, axis=0, ignore_index=True)
         # Load a single dataset
         else:
-            all_data = self._load_data(filename, disaster_names, source_names, preprocess)
+            all_data = self._load_data(filename, event_names, source_names, preprocess)
         self.data = all_data["text"].tolist()
         self.labels = all_data["class_label"].tolist()
 
@@ -41,7 +41,7 @@ class HumanitarianDataset(Dataset):
             # Select rows from specific sources
             all_data = all_data[all_data["source"].isin(sources)]
         if names is not None:
-            # Select rows depending on the type of disaster
+            # Select rows depending on the type of event
             all_data = all_data[all_data["event"].isin(names)]
         if preprocess:
             # Some simple preprocessing, removing the "#", "RT", "@...", "http://t.co/etc..", non ascii characters, and replace multiple spaces by one

@@ -82,7 +82,7 @@ if __name__ == '__main__':
             wandb.config.run          = "evaluation"
 
         # Load data to test on
-        dataset = HumanitarianDataset(args.test_filename, disaster_names=test_event, source_names=args.test_sources)
+        dataset = HumanitarianDataset(args.test_filename, event_names=test_event, source_names=args.test_sources)
         testloader = DataLoader(dataset, batch_size=256, shuffle=False)
 
         # Run testing
