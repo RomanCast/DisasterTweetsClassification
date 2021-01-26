@@ -1,10 +1,10 @@
 # Domain Adaptation for Disaster Tweet Classification
 
-This repo contains the code for the MVA Deep Learning course project 2020.
+This repo contains the code for the MVA Deep Learning course project 2020. You can read the report : `PR_Castagné.pdf`.
 
 It contains code to train a sentence classifier on Disaster Tweet data. In order to make it work, you will need to get the dataset from [Alam et al., 2020](https://arxiv.org/abs/2004.06774), available [here](https://crisisnlp.qcri.org/crisis_datasets_benchmarks.html). All the labels are already in the folder `data` of this repository.
 
-You can also train RoBERTa adversarially, following [Domain Adversarial training for Neural Networks](). This is useful to improve robustness of your model. The modified model is in the file `model.py`, and is mostly inspired by (https://github.com/bzantium/bert-DANN).
+You can also train RoBERTa adversarially, following [Domain Adversarial training for Neural Networks](). This is useful to improve robustness of your model. The modified model is in the file `model.py`, and is mostly inspired by https://github.com/bzantium/bert-DANN.
 
 We offer the option to use [Weights and Biases](https://wandb.ai/) to log experiments. Add the flag `--use_wandb` to enable it.
 
