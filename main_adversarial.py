@@ -59,7 +59,7 @@ def train(args, model, optimizer,
             running_loss += loss.item()
             # Every args.val_metrics, evaluate your model
             if (i + 1) % args.val_metrics == 0:
-                acc, f1 = validation(args, model, validloader, process_inputs)
+                acc, f1 = validation_adversarial(args, model, validloader, process_inputs)
                 print(f"[{epoch}, {i:5d}] : F1 = {f1:.4f}; Acc = {acc:.4f}; Tr loss = {running_loss / args.val_metrics:.4f}")
                 if args.use_wandb:
                     batch = min(len(trainloader_src), len(trainloader_tgt)) * epoch + i
@@ -67,7 +67,7 @@ def train(args, model, optimizer,
                 running_loss = 0.
                 model.train()
 
-        acc, f1 = validation(args, model, validloader, process_inputs)
+        acc, f1 = validation_adversarial(args, model, validloader, process_inputs)
         # We only save the best model given by the validation data
         if f1 > best_f1:
             best_f1 = f1
@@ -79,7 +79,7 @@ def train(args, model, optimizer,
             torch.save(model.state_dict(), os.path.join(args.save_path, get_model_name(args, adversarial=True)))
 
 
-def validation(args, model, validloader, process_inputs):
+def validation_adversarial(args, model, validloader, process_inputs):
     """
     Uses the model and a validation set to assess the performance of the model through training.
 
@@ -100,8 +100,9 @@ def validation(args, model, validloader, process_inputs):
             empty_inputs = {key + '_tgt': None for key, val in inputs.items()}
             labels = labels.to(args.device)
             domains = None
+            alpha = None
 
-            outputs = model(**inputs, **empty_inputs, labels=labels, domains=domains, alpha=args.alpha)
+            outputs = model(**inputs, **empty_inputs, labels=labels, domains=domains, alpha=alpha)
 
             preds = list(outputs.logits.cpu().max(dim=1)[1].numpy())
             all_preds += preds

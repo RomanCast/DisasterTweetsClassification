@@ -16,6 +16,8 @@ import numpy as np
 from data import HumanitarianDataset
 from utils import get_model_name
 from main import validation
+from main_adversarial import validation_adversarial
+from model import DomainAdversarialRoberta
 
 
 if __name__ == '__main__':
@@ -27,13 +29,18 @@ if __name__ == '__main__':
     parser.add_argument("--train_sources", default=None, nargs="+", type=str, help="List of database sources on which the model was trained")
     parser.add_argument("--test_on", type=str, nargs="+", help="Disaster on which to test the model.")
     parser.add_argument("--test_sources", default=None, nargs="+", type=str, help="List of database sources on which to test the model")
+
+    parser.add_argument("--adversarial", action='store_true', help="Evaluate an adversarially trained model")
+    parser.add_argument("--target_events", default=None, nargs="+", type=str, help="List of target event names")
+    parser.add_argument("--target_sources", default=None, nargs="+", type=str, help="List of target database sources")
+
     parser.add_argument("--use_wandb", action='store_true')
     args = parser.parse_args()
     args.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     args.save_path = "models"
 
     # Get the model name on the existing folder containing models. If it does not exist, this will throw an exception
-    args.finetuned_checkpoint = get_model_name(args, saving=False)
+    args.finetuned_checkpoint = get_model_name(args, saving=False, adversarial=args.adversarial)
 
     # Get the number of unique labels
     unique_labels = json.load(open("data/humanitarian_labels.json", 'r'))
@@ -48,13 +55,17 @@ if __name__ == '__main__':
         args.model_name_or_path,
         num_labels=num_labels,
     )
-    # We add the state_dict argument to load an existing finetuned model
-    model = AutoModelForSequenceClassification.from_pretrained(
-        args.model_name_or_path,
-        from_tf=False,
-        config=config,
-        state_dict=torch.load(os.path.join(args.save_path, args.finetuned_checkpoint))
-    ).to(args.device)
+    if args.adversarial:
+        model = DomainAdversarialRoberta(config).to(args.device)
+        model.load_state_dict(torch.load(os.path.join(args.save_path, args.finetuned_checkpoint)))
+    else:
+        # We add the state_dict argument to load an existing finetuned model
+        model = AutoModelForSequenceClassification.from_pretrained(
+            args.model_name_or_path,
+            from_tf=False,
+            config=config,
+            state_dict=torch.load(os.path.join(args.save_path, args.finetuned_checkpoint))
+        ).to(args.device)
 
     # We process each batch with this function. This way, we can pad to the specific length of every batch and avoid unnecessary long inputs
     def process_inputs(examples):
@@ -80,13 +91,20 @@ if __name__ == '__main__':
             wandb.config.eval_sources = args.test_sources
             wandb.config.model        = args.model_name_or_path
             wandb.config.run          = "evaluation"
+            wandb.config.adversarial  = args.adversarial
+            if args.adversarial:
+                wandb.config.tgt_events  = args.target_events
+                wandb.config.tgt_sources = args.target_sources
 
         # Load data to test on
         dataset = HumanitarianDataset(args.test_filename, event_names=test_event, source_names=args.test_sources)
         testloader = DataLoader(dataset, batch_size=256, shuffle=False)
 
         # Run testing
-        acc, f1 = validation(args, model, testloader, process_inputs)
+        if args.adversarial:
+            acc, f1 = validation_adversarial(args, model, testloader, process_inputs)
+        else:
+            acc, f1 = validation(args, model, testloader, process_inputs)
 
         # A bit of magic for printing
         if args.train_on is not None:
@@ -96,7 +114,8 @@ if __name__ == '__main__':
         else:
             trained_on = 'all'
 
-        print(f"Results for the model trained on {trained_on} evaluated on {test_event if test_event is not None else 'all'} "
+        print(f"Results for the model {'adversarially ' if args.adversarial else ''}"
+              f"trained on {trained_on} evaluated on {test_event if test_event is not None else 'all '}"
               f"from {', '.join(args.test_sources) if args.test_sources is not None else 'all'} datasets:")
         print(f"\tAccuracy: {acc:.4f}")
         print(f"\tF1      : {f1:.4f}")
